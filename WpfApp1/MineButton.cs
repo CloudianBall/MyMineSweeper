@@ -49,8 +49,5 @@ namespace WpfApp1
         public int Number { get; set; }
         public Boolean IsMine { get; set; }
         public int row, col;
-
-        public MineButton[] AroundButtons = new MineButton[8];
-
     }
 }

@@ -22,6 +22,7 @@ namespace WpfApp1
     {
         public static MineButton[,] mineButtons = new MineButton[30,16];
         public static List<MineButton> Mines = new List<MineButton>();
+        private bool canRun = true;
 
         public static Tuple<int,int> Random()
         {
@@ -49,7 +50,7 @@ namespace WpfApp1
             }
         }
 
-        public void SetAroundButtons(int x, int y)
+        public void SetMineAroundButtonNumber(int x, int y)
         {
             for (int i = x - 1; i <= x + 1; i++)
             {
@@ -61,6 +62,32 @@ namespace WpfApp1
                         continue;
                     if (!mineButtons[i, j].IsMine)
                         mineButtons[i, j].Number++;
+                }
+            }
+        }
+
+        public void ClickAroundButtons(int x, int y)
+        {
+            for (int i = x - 1; i <= x + 1; i++)
+            {
+                if (i < 0 || i >= 30)
+                    continue;
+                for (int j = y - 1; j <= y + 1; j++)
+                {
+                    if (j < 0 || j >= 16)
+                        continue;
+                    if (i == x && j == y)
+                        continue;
+                    if (mineButtons[i, j].IsEnabled)
+                    {
+                        mineButtons[i, j].IsEnabled = false;
+                        if (mineButtons[i, j].Number == 0)
+                        {
+                            ClickAroundButtons(i, j);
+                        }
+                        else
+                            mineButtons[i, j].Content = mineButtons[i, j].Number;
+                    }
                 }
             }
         }
@@ -100,7 +127,7 @@ namespace WpfApp1
             {
                 foreach(var mine in Mines)
                 {
-                    SetAroundButtons(mine.col, mine.row);
+                    SetMineAroundButtonNumber(mine.col, mine.row);
                 }
             }
         }
@@ -112,25 +139,47 @@ namespace WpfApp1
             CreateMainZone();
         }
 
-        public void OnMineButtonClick(object sender, EventArgs e)
+        private void SetFailure()
         {
-            var button = sender as MineButton;
+            foreach(var mine in Mines)
+            {
+                mine.Content = "M";
+                mine.Foreground = Brushes.Red;
+            }
+            canRun = false;
+        }
+
+        private void SetButtonStatus(MineButton button)
+        {
             if (button.IsMine)
             {
                 button.Content = "M";
-                button.Background = Brushes.Red;
+                button.Foreground = Brushes.Red;
+                SetFailure();
             }
-
             else
             {
-                button.Content = button.Number;
-                button.Background = Brushes.LightGray;
+                button.IsEnabled = false;
+                if (button.Number == 0)
+                    ClickAroundButtons(button.col, button.row);
+                else
+                    button.Content = button.Number;
             }
+        }
+
+        public void OnMineButtonClick(object sender, EventArgs e)
+        {
+            if (!canRun)
+                return;
+            var button = sender as MineButton;
+
+            SetButtonStatus(button);
         }
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
             MainZone.Children.Clear();
+            canRun = true;
             mineButtons = new MineButton[30, 16];
             Mines.Clear();
             CreateMainZone();
